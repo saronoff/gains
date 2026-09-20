@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Write(public/app.js)",
+      "Write(public/index.html)",
+      "Write(public/sw.js)",
+      "Write(public/manifest.json)",
+      "Write(schema.sql)",
+      "Write(CLAUDE.md)"
+    ]
+  }
+}

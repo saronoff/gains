@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0f0f0f"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Gains"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="icon" href="/icons/favicon.ico" sizes="any"/>
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml"/>
+  <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+  <title>Gains</title>
+  <link rel="stylesheet" href="/app.css"/>
+</head>
+<body>
+
+<div id="config-screen">
+  <h1>Gains 🏋️</h1>
+  <p>Enter your Supabase project URL and anon key to get started. These are stored locally on your device only.</p>
+  <div class="form-group" style="width:100%;max-width:420px">
+    <label>Supabase Project URL</label>
+    <input type="text" id="cfg-url" placeholder="https://xxxx.supabase.co" autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <div class="hint">Found in Supabase → Settings → API</div>
+    <label>Anon Key</label>
+    <input type="text" id="cfg-key" placeholder="eyJhbGci..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <div class="hint">The public anon key — safe to use in client apps</div>
+    <button class="primary" onclick="saveConfig()">Connect & Launch</button>
+    <div id="cfg-error" style="color:#f87171;font-size:13px;margin-top:8px;display:none"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div id="drawer-backdrop" onclick="closeDrawer()"></div>
+  <div id="nav-drawer">
+    <div id="nav-drawer-head">Gains</div>
+    <button class="nav-item active" onclick="switchTab('log',this)">Log</button>
+    <button class="nav-item" onclick="switchTab('templates',this)">Templates</button>
+    <button class="nav-item" onclick="switchTab('exercises',this)">Exercises</button>
+    <button class="nav-item" onclick="switchTab('progress',this)">Progress</button>
+    <button class="nav-item" onclick="switchTab('volume',this)">Volume</button>
+    <button class="nav-item" onclick="switchTab('coach',this)">AI Coach</button>
+    <button class="nav-item" onclick="switchTab('settings',this)">Settings</button>
+  </div>
+  <div id="app-header">
+    <button id="hamburger" onclick="openDrawer()">☰</button>
+    <span id="header-title">Log</span>
+    <div id="sync-status"></div>
+  </div>
+
+  <div class="panels">
+
+    <div id="tab-log" class="panel active">
+      <div id="today-banner"></div>
+      <div id="missed-bar"></div>
+      <div id="week-nav" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"></div>
+      <div id="week-grid-log" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:12px"></div>
+      <div id="log-today-ui" style="display:none">
+        <div id="timer-alert" class="timer-alert" style="display:none">
+          <p>⏱ Rest over — get after it.</p>
+          <button class="primary" onclick="dismissTimerAlert()" style="padding:6px 14px;font-size:12px">Dismiss</button>
+        </div>
+        <div class="timer-bar">
+          <button class="timer-adj" id="tmr-minus" onclick="timerAdj(-15)">−</button>
+          <div class="timer-time" id="tmr-display">3:00</div>
+          <button class="timer-adj" id="tmr-plus" onclick="timerAdj(+15)">+</button>
+          <button class="primary timer-start-btn" id="tmr-btn" onclick="timerToggle()">Start</button>
+          <button class="timer-reset-btn" id="tmr-reset" onclick="timerReset()" style="display:none">Reset</button>
+        </div>
+      </div>
+      <p class="section-title" id="log-section-title"></p>
+      <div id="workout-list"></div>
+      <div id="add-ex-container"></div>
+    </div>
+
+    <div id="tab-templates" class="panel">
+      <p class="section-title">My templates</p>
+      <div id="template-list"></div>
+      <button class="full-btn" onclick="showNewTemplate()">+ New template</button>
+      <div id="new-template-form" style="display:none;border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-top:4px;margin-bottom:4px">
+        <p class="section-title" style="margin-top:0">New template</p>
+        <div class="form-group"><label>Name</label><input type="text" id="tmpl-name" placeholder="e.g. Push day"/></div>
+        <div class="form-group"><label>Days</label>
+          <div class="day-chips">
+            <span class="day-chip" onclick="toggleDay(this)">Mon</span>
+            <span class="day-chip" onclick="toggleDay(this)">Tue</span>
+            <span class="day-chip" onclick="toggleDay(this)">Wed</span>
+            <span class="day-chip" onclick="toggleDay(this)">Thu</span>
+            <span class="day-chip" onclick="toggleDay(this)">Fri</span>
+            <span class="day-chip" onclick="toggleDay(this)">Sat</span>
+            <span class="day-chip" onclick="toggleDay(this)">Sun</span>
+          </div>
+        </div>
+        <p class="section-title">Exercises</p>
+        <div id="tmpl-exercises"></div>
+        <div class="add-ex-row">
+          <div class="form-group" style="margin:0"><label>Exercise</label><input type="text" id="tmpl-ex-name" placeholder="Squat" list="registry-datalist" oninput="onTmplExNameInput()"/></div>
+          <div class="form-group" style="margin:0"><label>Sets</label><input type="number" id="tmpl-ex-sets" placeholder="2" min="1"/></div>
+          <div class="form-group" style="margin:0"><label>Reps</label><input type="text" id="tmpl-ex-reps" placeholder="8-10"/></div>
+          <div class="form-group" style="margin:0"><label>Muscle</label><span id="tmpl-ex-muscle-display" style="font-size:14px;padding:9px 0;display:block;color:var(--text3)">—</span></div>
+          <div class="form-group" style="margin:0;flex:0 0 auto"><label>&nbsp;</label><button class="ghost icon-circle icon-add" onclick="addTmplEx()" title="Add exercise">+</button></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="primary" onclick="saveTemplate()" style="flex:1">Save</button>
+          <button onclick="cancelTemplate()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-exercises" class="panel">
+      <div id="exercise-registry-list"></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:6px;align-items:flex-end;margin-top:8px;margin-bottom:4px">
+        <div class="form-group" style="margin:0"><label>Name</label><input type="text" id="reg-ex-name" placeholder="e.g. Barbell Row"/></div>
+        <div class="form-group" style="margin:0"><label>Primary</label>
+          <select id="reg-ex-muscle">
+            <option>Chest</option><option>Back</option><option>Shoulders</option>
+            <option>Biceps</option><option>Triceps</option><option>Quads</option>
+            <option>Hamstrings</option><option>Glutes</option><option>Calves</option><option>Core</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0"><label>Secondary</label>
+          <select id="reg-ex-secondary">
+            <option value="">None</option>
+            <option>Chest</option><option>Back</option><option>Shoulders</option>
+            <option>Biceps</option><option>Triceps</option><option>Quads</option>
+            <option>Hamstrings</option><option>Glutes</option><option>Calves</option><option>Core</option>
+          </select>
+        </div>
+        <div><label style="display:block;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:5px">&nbsp;</label><button class="ghost icon-circle icon-add" onclick="submitNewRegistryEx()" title="Add exercise">+</button></div>
+      </div>
+    </div>
+
+    <div id="tab-progress" class="panel">
+      <p class="section-title">Exercise progress</p>
+      <div class="form-group" style="margin-bottom:12px">
+        <select id="progress-exercise" onchange="renderProgress()"><option value="">Select an exercise</option></select>
+      </div>
+      <div class="chart-wrap"><canvas id="progressChart" role="img" aria-label="Estimated 1RM over time"></canvas></div>
+      <div id="progress-prs"></div>
+    </div>
+
+    <div id="tab-volume" class="panel">
+      <p class="section-title">Weekly sets by muscle group</p>
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <button id="vol-pill-rolling" class="vol-pill active" onclick="setVolumeMode('rolling')">Last 7 Days</button>
+        <button id="vol-pill-week" class="vol-pill" onclick="setVolumeMode('week')">This week</button>
+      </div>
+      <div class="stat-grid" id="volume-stats"></div>
+      <div id="volume-bars"></div>
+      <p class="section-title" style="margin-top:20px">Hypertrophy targets</p>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6">10–20 weekly sets per muscle for growth. Under 10 = maintenance. Over 20 = recovery risk.</p>
+      <p class="section-title" style="margin-top:20px">Export for Claude</p>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px">Export your split, weights, and last 4 weeks of sessions as markdown.</p>
+      <div style="display:flex;gap:8px">
+        <button onclick="exportForClaude('copy')">Copy to clipboard</button>
+        <button onclick="exportForClaude('download')">Download .md</button>
+      </div>
+      <div id="export-status" style="font-size:12px;color:var(--text3);margin-top:8px;min-height:16px"></div>
+    </div>
+
+    <div id="tab-coach" class="panel">
+      <p class="section-title">AI coaching analysis</p>
+      <div class="coach-box">
+        <div class="coach-response loading" id="coach-text">Tap a button below to get analysis based on your logged workouts.</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px">
+        <button onclick="askCoach('analyze')">Analyze training ↗</button>
+        <button onclick="askCoach('plateau')">Plateau check ↗</button>
+        <button onclick="askCoach('volume')">Volume advice ↗</button>
+        <button onclick="askCoach('next')">Next steps ↗</button>
+      </div>
+    </div>
+
+    <div id="tab-settings" class="panel">
+      <div id="settings-content"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MAKEUP OVERLAY -->
+<div class="overlay" id="makeup-overlay" onclick="handleMakeupOverlayClick(event)">
+  <div class="overlay-card" onclick="event.stopPropagation()">
+    <div style="font-size:15px;font-weight:600;margin-bottom:4px" id="makeup-title">Makeup session</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px" id="makeup-sub"></div>
+    <div class="makeup-response loading" id="makeup-response">Building your adjusted workout...</div>
+    <div style="margin-top:18px;display:flex;gap:8px;justify-content:flex-end">
+      <button class="primary" id="makeup-apply-btn" onclick="applyMakeupDay()" style="display:none">Use this workout</button>
+      <button onclick="closeMakeup()">Close</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="registry-datalist"></datalist>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
